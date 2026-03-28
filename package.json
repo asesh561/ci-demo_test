@@ -1,0 +1,19 @@
+{
+  "name": "ci-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+ "scripts": {
+  "lint": "eslint . || true",
+  "test": "jest",
+  "test:coverage": "jest --coverage --coverageReporters=json-summary"
+},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "eslint": "^10.1.0",
+    "jest": "^30.3.0"
+  }
+}

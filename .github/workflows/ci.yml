@@ -1,0 +1,62 @@
+name: PR CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm install
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Extract coverage
+        id: coverage
+        run: |
+          COVERAGE=$(node -e "
+            const data = require('./coverage/coverage-summary.json');
+            console.log(data.total.lines.pct);
+          ")
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const coverage = "${{ steps.coverage.outputs.coverage }}";
+            const msg = `Coverage: ${coverage}%`;
+            github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body: msg
+            });
+
+      - name: Fail if coverage < 80%
+        run: |
+          COVERAGE=${{ steps.coverage.outputs.coverage }}
+          echo "Coverage is $COVERAGE%"
+          awk "BEGIN {exit !($COVERAGE >= 80)}"
+
+      - name: Cleanup on failure
+        if: failure()
+        run: |
+          rm -rf coverage
